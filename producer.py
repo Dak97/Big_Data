@@ -4,8 +4,10 @@ import json
 
 df = pd.read_csv('movie.csv')
 
-texts = df['text'].head(4)
-labels = df['label'].head(4)
+print(df.size)
+
+texts = df['text'].head(50)
+labels = df['label'].head(50)
 
 prod = KafkaProducer(bootstrap_servers='localhost:9092', value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 

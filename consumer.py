@@ -1,16 +1,17 @@
 from pyspark.sql import SparkSession
 
+dataset = []
+
 def func(batch_df, batch_id):
     df = batch_df.collect()
     
-    dataset = []
     for d in df:
         text = eval(d.value.decode('utf-8'))['text']
         label = eval(d.value.decode('utf-8'))['label']
 
         dataset.append((text, label))
         
-    print(dataset)
+    print(len(dataset))
     
     
 
