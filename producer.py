@@ -2,12 +2,13 @@ from kafka import KafkaProducer
 import pandas as pd
 import json
 
-df = pd.read_csv('movie.csv')
+df = pd.read_csv('movie_stream.csv')
 
-print(df.size)
+# shuffle
+df = df.sample(frac=1)
 
-texts = df['text'].head(50)
-labels = df['label'].head(50)
+texts = df['text'].head(2000)
+labels = df['label'].head(2000)
 
 prod = KafkaProducer(bootstrap_servers='localhost:9092', value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
