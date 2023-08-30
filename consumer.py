@@ -4,9 +4,22 @@ from pyspark.mllib.classification import SVMWithSGD, SVMModel
 
 dataset = []
 
-spark = SparkSession.builder.appName('BIG_DATA_PROJECT').getOrCreate()
+spark = SparkSession.builder.appName('BIG_DATA_PROJECT') \
+    .config("spark.mongodb.input.uri", "mongodb://127.0.0.1/test.coll") \
+    .config("spark.mongodb.output.uri", "mongodb://127.0.0.1/test.coll") \
+    .config("spark.mongodb.write.connection.uri","mongodb://127.0.0.1") \
+    .config("spark.mongodb.write.database","test") \
+    .config("spark.mongodb.write.collection","myCollection") \
+    .getOrCreate()
 
-model = SVMModel.load(spark.sparkContext, './SVM')
+'''  
+people = spark.createDataFrame([("Bilbo Baggins",  50), ("Gandalf", 1000), ("Thorin", 195), ("Balin", 178), ("Kili", 77),
+   ("Dwalin", 169), ("Oin", 167), ("Gloin", 158), ("Fili", 82), ("Bombur", None)], ["name", "age"])    
+   
+people.write.format("mongodb").mode("append").save()  
+people.show()
+'''
+model = SVMModel.load(spark.sparkContext, './Desktop/Big_Data/models/SVM')
 
 def extract_feature_from_text(rdd):
     # split positive and negative
@@ -36,17 +49,19 @@ def extract_feature_from_text(rdd):
 
 def func(batch_df, batch_id):
     df = batch_df.collect()
-    
+    rdd_dataset = None
     for d in df:
         text = eval(d.value.decode('utf-8'))['text']
         label = eval(d.value.decode('utf-8'))['label']
 
 
         dataset.append((int(label), text))
+    if len(dataset) > 0:
+    	df_dataset = spark.createDataFrame(dataset)
+    	df_dataset.write.format("mongodb").mode("append").save()
+    	rdd_dataset = df_dataset.rdd
 
-    rdd_dataset = spark.sparkContext.parallelize(dataset)
-
-    if rdd_dataset.count() > 0:
+    if rdd_dataset is not None and rdd_dataset.count() > 0:
         # funzione che trasformi il testo in feature
         rdd_dataset_feature = extract_feature_from_text(rdd_dataset)
 
@@ -65,5 +80,6 @@ df = spark.readStream \
     .load()
 
 query = df.writeStream.foreachBatch(func).start()
+
 
 query.awaitTermination()
