@@ -34,7 +34,7 @@ def extract_feature_from_text(rdd, train=True):
     rdd_positive_text = rdd_positive_samples.map(lambda x: x['text'])
     rdd_negative_text = rdd_negative_samples.map(lambda x: x['text'])
 
-    tf = HashingTF()
+    tf = HashingTF(numFeatures=2000)
     rdd_positive_text_tf = rdd_positive_text.map(lambda x: tf.transform(x))
     rdd_negative_text_tf = rdd_negative_text.map(lambda x: tf.transform(x))
 

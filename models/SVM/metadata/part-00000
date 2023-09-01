@@ -1,1 +1,1 @@
-{"class":"org.apache.spark.mllib.classification.SVMModel","version":"1.0","numFeatures":1048576,"numClasses":2}
+{"class":"org.apache.spark.mllib.classification.SVMModel","version":"1.0","numFeatures":2000,"numClasses":2}
