@@ -5,6 +5,8 @@ from pyspark.mllib.classification import SVMWithSGD, SVMModel
 from pyspark.ml import PipelineModel
 from pyspark.sql.functions import col
 
+from utils import PATH_DATASET, models_dataframe, MODELS_DATAFRAME
+
 dataset = []
 acc = []
 
@@ -24,7 +26,9 @@ people.write.format("mongodb").mode("append").save()
 people.show()
 '''
 # model = SVMModel.load(spark.sparkContext, './models/SVM')
-model = PipelineModel.load('./models/logistic/')
+
+current_model = models_dataframe.LOGREG
+model = PipelineModel.load(f'./models/dataframe/{MODELS_DATAFRAME[current_model]}')
 
 def extract_feature_from_text(rdd):
     # split positive and negative
@@ -68,7 +72,7 @@ def func(batch_df, batch_id):
 
     if len(dataset) > 0:
         df_dataset = spark.createDataFrame(dataset)
-        # df_dataset.write.format("mongodb").mode("append").save()
+        df_dataset.write.format("mongodb").mode("append").save()
         # rdd_dataset = df_dataset.rdd
 
     # if rdd_dataset is not None and rdd_dataset.count() > 0:
@@ -99,6 +103,7 @@ def func(batch_df, batch_id):
         print('Accuracy: ', sum(acc)/len(acc))
 
         dataset.clear()
+        
 
 df = spark.readStream \
     .format("kafka") \

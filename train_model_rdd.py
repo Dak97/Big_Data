@@ -6,12 +6,12 @@ from shutil import rmtree
 from os import path
 from utils import *
 
-TRAIN = True
+TRAIN = False
 TEST = True
 LOAD = True
 
     
-current_model = models.SVM
+current_model = models.DECTREE
 
 spark = SparkSession.builder.appName('TRAIN_MODEL').getOrCreate()
 
@@ -40,13 +40,18 @@ rdd_te = df_spark_te.rdd
 
                                    
 if TRAIN:
-    rdd_train = extract_feature_from_text(rdd_tr)
+    rdd_train = extract_feature_from_text(rdd_tr, num_feat=2000)
 
     if path.isdir(f'{get_path(current_model)}data'):
         rmtree(f'{get_path(current_model)}data')
         rmtree(f'{get_path(current_model)}metadata')
 
-    model = get_model_class(current_model).train(rdd_train)
+    if current_model == models.DECTREE:
+        model = get_model_class(current_model).trainClassifier(rdd_train, numClasses=2, categoricalFeaturesInfo={},
+                                     impurity='gini', maxDepth=5, maxBins=32)
+    else:
+        # svm, logistic regression, naive bayes
+        model = get_model_class(current_model).train(rdd_train)
 
     model.save(spark.sparkContext, f'{get_path(current_model)}')
 
@@ -56,9 +61,12 @@ if TEST:
     model = get_model_class(current_model, load=True).load(spark.sparkContext, f'{get_path(current_model)}')
 
     rdd_test = extract_feature_from_text(rdd_te, train=False)
-
-    pred_and_labels = rdd_test.map(lambda x: (x[0], model.predict(x[1])))
-
+    if current_model == models.DECTREE:
+        pred_and_labels = model.predict(rdd_test.map(lambda x: x))
+        print(pred_and_labels.collect())
+    else:
+        pred_and_labels = rdd_test.map(lambda x: (x[0], model.predict(x[1])))
+    
     error = pred_and_labels.filter(lambda x: x[0] == x[1]).count() / float(rdd_test.count())
 
     print('\Testing ended.\n')
